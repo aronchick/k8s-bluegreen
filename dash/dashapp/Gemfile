@@ -1,11 +1,19 @@
 source 'https://rubygems.org'
 
 # Gemfile
+gem "sinatra"
+gem "sinatra-contrib"
 gem 'eventmachine'
-gem 'thin'
-gem 'sinatra'
+gem 'em-websocket', '~> 0.3.1'
 gem 'em-http-request'
-gem 'em-websocket'
+gem 'sinatra-websocket'
+gem "rake"
+gem 'require_all', '~> 1.3.2'
+gem 'awesome_print', '~> 1.6.1'
+gem 'erubis'
+gem 'thin'
+
+
 gem 'nokogiri'
 gem 'json'
 gem 'byebug'

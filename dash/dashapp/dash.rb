@@ -1,7 +1,7 @@
 require 'eventmachine'
-require 'sinatra/base'
-require 'thin'
 require 'em-http-request'
+require 'sinatra/base'
+require 'sinatra-websocket'
 require 'em-websocket'
 require 'nokogiri'
 require 'json'
@@ -24,11 +24,7 @@ class Constants
   end
 
   def self.WS_Code
-    if Constants.isLocal?
-      'ws://localhost:8080'
-    else
-      'ws://" + location.hostname + "/ws'
-    end
+    'ws://" + location.hostname + ":" + location.port + "/ws'
   end
 end
 
@@ -120,76 +116,7 @@ def run(opts)
   # Start the reactor
   EM.run do
 
-    @socket = nil
 
-    def start_websockets(this_port)
-      EM::WebSocket.start(:host => '0.0.0.0', :port => this_port) do |websocket|
-        websocket.onopen do |handshake|
-          puts "Client connected"
-          @socket = websocket
-        end
-
-        websocket.onmessage do |msg|
-          puts "Received Message: #{msg}"
-          # @socket.send(msg)
-        end
-
-        websocket.onclose do
-          websocket.send "Closed."
-        end
-
-        websocket.onerror { |e| puts "err #{e.inspect}" }
-      end
-    end
-
-    @servers = []
-    server_results = EM::Channel.new
-
-    # define some defaults for our app
-    server  = opts[:server] || 'thin'
-    host    = opts[:host]   || '0.0.0.0'
-    port    = opts[:port]   || '8181'
-    web_app = opts[:app]
-
-    dispatch = Rack::Builder.app do
-      map '/' do
-        run web_app
-      end
-    end
-
-    # Start the web server. Note that you are free to run other tasks
-    # within your EM instance.
-    thin_continue = true
-    port = 8181
-    i = 0
-    while (thin_continue)
-      begin
-        Rack::Server.start({
-          app:    dispatch,
-          server: server,
-          Host:   host,
-          Port:   (port + i),
-          signals: false,
-          })
-      rescue Exception => ex
-        if (ex.message == "no acceptor (port is in use or requires root privileges)") and (i < 5)
-          i = i + 1
-        elsif (i >= 5)
-          thin_continue = false
-        else
-          raise ex
-        end
-      end
-    end
-
-
-    EM.defer do
-      server_results.subscribe do |m|
-        if (@socket) then
-          @socket.send(JSON.generate(m))
-        end
-      end
-    end
 
     EM.add_periodic_timer(5) do
       tg = GrabServer.new
@@ -220,42 +147,138 @@ def run(opts)
         t.errback { }
       end
     end
-
-    puts "Server started on 0.0.0.0:8080 (drag index.html to your browser)"
-
-    continue = true
-    port = 8080
-    i = 0
-    while (continue)
-      begin
-        start_websockets(port + i)
-      rescue Exception => ex
-        if (ex.message == "no acceptor (port is in use or requires root privileges)") and (i < 5)
-          i += 1
-        elsif (i >= 5)
-          continue = false
-        else
-          raise ex
-        end
-      end
-    end
   end
 end
 
 # Our simple hello-world app
-class DashApp < Sinatra::Base
-  # threaded - False: Will take requests on the reactor thread
-  #            True:  Will queue request for background thread
-  configure do
-    set :threaded, false
+class DashApp < Sinatra::Application
+  attr_reader :request_payload
+  set :server,'thin'
+  set :show_exceptions, true
+  set :dump_errors, true
+  set :root, File.dirname(__FILE__)
+
+  @socket = nil
+  @servers = []
+  @server_results = EM::Channel.new
+
+  def initialize
+      super()
   end
 
   get '/' do
     erb :index, :locals => {:num_of_burst => Constants.get(:num_of_burst)}
   end
 
-  # start the server if ruby file executed directly
-  run! if app_file == $0
+  WEBSOCKETS_BASE = '/ws'
+  set :sockets, []
+
+  get "#{WEBSOCKETS_BASE}" do
+    if !request.websocket?
+      halt 500, json({message: "This end point must be for ws:// "})
+    else
+      request.websocket do |ws|
+        ws.onopen do
+          settings.sockets << ws
+          puts "Connected to #{request.path}."
+          ws.send "Connected to server at #{request.path}."
+        end
+        ws.onmessage do |msg|
+          puts "Received Message: #{msg}"
+          settings.sockets.each do |socket|
+            puts "Sending #{msg}"
+            socket.send "Server replies: #{msg}"
+          end
+        end
+        ws.onclose do
+          warn("websocket closed")
+          settings.sockets.delete(ws)
+          puts "Client closed"
+          ws.send "Closed."
+          settings.sockets.delete ws
+        end
+      end
+    end
+
+    EM.defer do
+      server_results.subscribe do |m|
+        settings.sockets.each do | socket |
+          socket.send(JSON.generate(m))
+        end
+      end
+    end
+
+  end
+
+  # get '/ws' do
+  #   if !request.websocket?
+  #     halt 500, json({message: "This end point must be for ws:// "})
+  #   else
+  #     byebug
+  #     request.websocket do |ws|
+  #       ws.onopen do |handshake|
+  #         puts "Client connected"
+  #         @socket = ws
+  #       end
+  #
+  #       ws.onmessage do |msg|
+  #         puts "Received Message: #{msg}"
+  #         # @socket.send(msg)
+  #       end
+  #
+  #       ws.onclose do
+  #         ws.send "Closed."
+  #       end
+  #
+  #       ws.onerror { |e| puts "err #{e.inspect}" }
+  #     end
+  #   end
+  # end
 end
 
-# run app: DashApp.new
+DashApp.run! if $0 == "dash.rb"
+
+# class WebSocketApp < Rack::Websocket::Application
+#   def initialize(options = {})
+#     super
+#
+#     @socket_mount_point = '/ws'
+#   end
+#
+#
+# 	def on_open(env)
+# 		# Protect against connections to invalid mount points.
+# 		if env['REQUEST_PATH'] != @socket_mount_point
+# 			close_websocket
+# 			puts "Closed attempted websocket connection because it's requested a mount point other than #{@socket_mount_point}"
+# 		end
+#
+# 		puts "Client Connected"
+#
+# 		# Send a welcome message to the user over websockets.
+# 		send_data "<span class='server'> @client Hello Client! </span>"
+# 		puts "Sent message: @client Hello Client!"
+#
+#                 # Uncomment below for an example of routinely broadcasting to the client.
+#                 #EM.next_tick do
+# 		#	# The "1" here specifies interval in seconds.
+#                 #        EventMachine::PeriodicTimer.new(1) do
+#                 #                send_data "<span class='server'> @client tick tock </span>"
+#                 #        end
+#                 #end
+# 	end
+#
+# 	def on_close(env)
+# 		puts "Client Disconnected"
+# 	end
+#
+# 	def on_message(env, message)
+# 		puts "Received message: #{message}"
+#
+# 		send_data "<span class='server'> @client I received your message: #{message} </span>"
+# 	end
+#
+# 	def on_error(env, error)
+# 		puts "Error occured: " + error.message
+# 	end
+# end

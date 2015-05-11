@@ -1,0 +1,11 @@
+Writing PID to tmp/pids/thin.3001.pid
+Thin web server (v1.6.3 codename Protein Powder)
+Maximum connections set to 1024
+Listening on 0.0.0.0:3001, CTRL+C to stop
+127.0.0.1 - - [11/May/2015:12:45:53 -0700] "GET / HTTP/1.1" 200 3065 0.0097
+Connected to /ws.
+127.0.0.1 - - [11/May/2015:12:45:55 -0700] "GET /favicon.ico HTTP/1.1" 404 510 0.0008
+websocket closed
+Client closed
+127.0.0.1 - - [11/May/2015:12:45:55 -0700] "GET /ws HTTP/1.1" -1 - 1.3717
+Exiting!
