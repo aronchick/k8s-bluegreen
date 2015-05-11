@@ -1,0 +1,6 @@
+source 'https://rubygems.org'
+
+# Gemfile
+gem 'thin'
+gem 'sinatra'
+gem 'json'

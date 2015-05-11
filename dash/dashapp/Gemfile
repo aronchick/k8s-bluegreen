@@ -1,0 +1,11 @@
+source 'https://rubygems.org'
+
+# Gemfile
+gem 'eventmachine'
+gem 'thin'
+gem 'sinatra'
+gem 'em-http-request'
+gem 'em-websocket'
+gem 'nokogiri'
+gem 'json'
+gem 'byebug'

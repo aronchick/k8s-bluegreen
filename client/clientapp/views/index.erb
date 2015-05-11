@@ -1,0 +1,22 @@
+<h1>Icons as a Service</h1>
+
+<h3> Here is my name: <%= hostname %></h3>
+<h3> Here is my icon: <span id="node-number-<%= hostname %>-icon" class="glyphicon <%= icon %>" style="font-size: 0.75em;"></span></h3>
+<h3> Here is my ip: <%= ip %>
+<h3> Here is my excellent button: <span class="btn btn-primary" id="emoji-button">Button</span></h3>
+<script>
+$(document).ready(function(){
+  $("#emoji-button").click(function(e){
+      e.preventDefault();
+      $.ajax({type: "GET",
+              url: "/json",
+              success:function(data) {
+                $("#node-number-<%= hostname %>-icon")
+                  .removeClass()
+                  .addClass("glyphicon")
+                  .addClass(data.icon);
+              }
+            });
+      });
+});
+</script>

@@ -1,0 +1,7 @@
+
+source :rubygems
+
+gem "eventmachine",    "1.0.0.beta.3"
+gem "em-synchrony",    "0.3.0.beta.1"
+gem "goliath",         "0.9.1"
+gem "em-http-request", "1.0.0.beta.3"
