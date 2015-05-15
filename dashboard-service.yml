@@ -1,13 +1,13 @@
 apiVersion: v1beta3
 kind: Service
-metadata: 
-  labels: 
+metadata:
+  labels:
     name: dashboard
   name: dashboard
-spec: 
+spec:
   ports:
     - port: 80
       targetPort: 80
-  selector: 
+  selector:
     name: dashboard
   createExternalLoadBalancer: true

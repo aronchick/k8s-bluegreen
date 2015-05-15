@@ -5,9 +5,9 @@ require './icons'
 
 class ButtonColor
   def self.get
-    # "#6a1d8d" # Purple
+    "#6a1d8d" # Purple
     # "#172296" # Blue
-    '#397200' # Green
+    # '#397200' # Green
   end
 end
 
@@ -33,6 +33,10 @@ class ClientApp < Sinatra::Base
   get '/json' do
     content_type :json
       { :hostname => Constants.hostname, :icon => Constants.icon, :color => ButtonColor.get, :ip => Constants.ip }.to_json
+  end
+
+  get '/_status/healthz' do
+    "OK"
   end
 
 end

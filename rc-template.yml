@@ -1,0 +1,28 @@
+apiVersion: v1beta3
+kind: ReplicationController
+metadata:
+  name: RCNAME
+spec:
+  replicas: 2
+  selector:
+    name: LABEL
+    version: VERSION
+  template:
+    metadata:
+      labels:
+        name: LABEL
+        version: VERSION
+    spec:
+      containers:
+      - image: gcr.io/mythical-willow-91020/IMAGENAME:VERSION
+        name: LABEL
+        livenessProbe:
+        # an http probe
+        httpGet:
+          path: /_status/healthz
+          port: 80
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+        ports:
+        - containerPort: 80
+          protocol: TCP

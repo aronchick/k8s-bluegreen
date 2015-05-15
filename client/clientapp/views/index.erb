@@ -1,9 +1,11 @@
 <h1>Icons as a Service</h1>
 
-<h3> Here is my name: <%= hostname %></h3>
-<h3> Here is my icon: <span id="node-number-<%= hostname %>-icon" class="glyphicon <%= icon %>" style="font-size: 0.75em;"></span></h3>
-<h3> Here is my ip: <%= ip %>
-<h3> Here is my excellent button: <span class="btn btn-primary" id="emoji-button">Button</span></h3>
+<h1> Your icon: <span id="node-number-<%= hostname %>-icon" class="glyphicon <%= icon %>" style="padding-left: 30px; font-size: 0.75em;"></span></h1>
+
+
+<h5> Hostname: <%= hostname %></h5>
+<h5> IP: <%= ip %></h5>
+<h5> Refresh: <span class="btn btn-primary" id="emoji-button" style="background-color: <%= ButtonColor.get %>">Button</span></h5>
 <script>
 $(document).ready(function(){
   $("#emoji-button").click(function(e){

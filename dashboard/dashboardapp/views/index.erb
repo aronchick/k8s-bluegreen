@@ -40,7 +40,7 @@
             catch (e) {
                 console.log("evt.data is not valid JSON:\nevt: " + evt);
             };
-        console.log(data);
+        // console.log(data);
         if (data != null) {
           if (data.type == "update") {
             if($("#node-"+ data.server_hostname).length == 0) {
@@ -60,7 +60,8 @@
             else {
               $("#node-" + data.server_hostname).css("background-color", data.server_color )
                 .css("border-color", data.server_color )
-                .css("color", "#FFFFFF");
+                .css("color", "#FFFFFF")
+                .addClass('alive-node');
                 $("#node-" + data.server_hostname + "-icon").removeClass().toggleClass("glyphicon " + data.server_icon);
             }
           }
@@ -72,6 +73,7 @@
             .css("border-color", disabledColor)
             .css("color", disabledColor)
             .css("border-style", "solid")
+            .removeClass('alive-node')
           };
         };
       };
@@ -80,6 +82,13 @@
       {
         console.log("socket closed");
       };
+
+      setInterval(function(){
+        var alive_node_ips = [];
+        $(".alive-node").each(function() { alive_node_ips.push(this.attributes['data-ip'].value)});
+
+        if (ws.OPEN) { ws.send(alive_node_ips); }
+      },5000);
 
     });
 

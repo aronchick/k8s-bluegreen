@@ -1,0 +1,28 @@
+apiVersion: v1beta3
+kind: ReplicationController
+metadata:
+  name: client-purple
+spec:
+  replicas: 2
+  selector:
+    name: client
+    version: v1.0.0
+  template:
+    metadata:
+      labels:
+        name: client
+        version: v1.0.0
+    spec:
+      containers:
+      - image: gcr.io/mythical-willow-91020/client_image:v1.0.0
+        name: client
+        livenessProbe:
+        # an http probe
+        httpGet:
+          path: /_status/healthz
+          port: 80
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+        ports:
+        - containerPort: 80
+          protocol: TCP
