@@ -62,7 +62,7 @@ class HttpFetcher
                               })
       response = HTTP.get("http://" + url)
       send(postProcessMethod, {:type => type, :data => response}, publishMethod)
-    rescue HTTP::TimeoutError,Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Timeout::Error => e
+    rescue HTTP::TimeoutError,Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Timeout::Error, Timeout::ExitException => e
       send(postProcessMethod, {:type => type, :data => nil}, publishMethod)
     rescue Exception => e
       puts e
@@ -72,10 +72,10 @@ class HttpFetcher
   def test(server_ip, publishMethod)
     s = nil
     begin
-      Timeout::timeout(1) do
-        s = TCPSocket.new(server_ip, 80)
-      end
-    rescue Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Timeout::Error, Errors::NoWebResponse => e
+        Timeout::timeout(1) do
+          s = TCPSocket.new(server_ip, 80)
+        end
+    rescue
       publishMethod.call({
                             :type => "sweep",
                             :server_ip => server_ip
