@@ -6,7 +6,7 @@ require './icons'
 class ButtonColor
   def self.get
     "#6a1d8d" # Purple
-    # "#172296" # Blue
+    #{}"#172296" # Blue
     # "#397200" # Green
   end
 end

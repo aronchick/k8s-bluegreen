@@ -5,7 +5,8 @@ RUN apt-get -y install software-properties-common && \
 RUN apt-get -y update
 RUN apt-get -y install build-essential \
                        ruby2.2 ruby2.2-dev \
-                       ruby-switch
+                       ruby-switch \
+                       zlib1g-dev
 
 # Disable the below line if you don't want debugging tools
 RUN apt-get -y install dnsutils curl
@@ -18,10 +19,9 @@ RUN gem install bundler
 RUN gem install thin
 RUN thin install
 RUN /usr/sbin/update-rc.d -f thin defaults
-COPY thin.conf /etc/thin/app
 
 # Expose HTTP service
-EXPOSE 80
+EXPOSE 3000
 
 # Add app user
 RUN adduser --disabled-password --home /app app
@@ -42,6 +42,9 @@ RUN rm -rf /app/log
 
 # Clean up APT and bundler when done.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Adding Thin config last (it's always new and blows away the cache)
+COPY thin.conf /etc/thin/app
 
 # Start Thin
 CMD ["thin", "-R", "config.ru", "-C", "/etc/thin/app", "start"]

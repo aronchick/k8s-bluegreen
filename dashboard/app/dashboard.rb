@@ -112,7 +112,7 @@ class GrabServer
   def scan
 
     url = '127.0.0.1:3100/json'
-    url ||= ENV["CLIENTS_PORT_80_TCP_ADDR"]
+    url = "#{ENV['CLIENT_PORT_3000_TCP_ADDR']}:#{ENV['CLIENT_PORT_3000_TCP_PORT']}/json" unless ENV['CLIENT_PORT_3000_TCP_ADDR'].nil?
     url = "client/json" if File.exist?("/etc/container_environment/KUBE_DNS_PORT_53_UDP_ADDR")
 
     postProcessMethod = Constants.isLocal? ?

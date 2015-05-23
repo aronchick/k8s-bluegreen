@@ -14,6 +14,5 @@ gem 'erubis'
 gem 'thin'
 
 
-gem 'nokogiri'
 gem 'json'
 gem 'byebug'
