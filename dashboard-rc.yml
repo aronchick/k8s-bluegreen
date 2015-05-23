@@ -6,15 +6,15 @@ spec:
   replicas: 2
   selector:
     name: dashboard
-    version: v1.0.1
+    version: v1.0.3
   template:
     metadata:
       labels:
         name: dashboard
-        version: v1.0.1
+        version: v1.0.3
     spec:
       containers:
-      - image: gcr.io/mythical-willow-91020/dashboard_image:v1.0.1
+      - image: gcr.io/mythical-willow-91020/dashboard_image:v1.0.3
         name: dashboard
         livenessProbe:
         # an http probe

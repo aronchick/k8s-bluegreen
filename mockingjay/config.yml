@@ -1,0 +1,10 @@
+---
+ - name: JSON Endpoint
+   request:
+     uri: /json
+     method: GET
+   response:
+     code: 200
+     body: '{ "sampleResponse": "update" }'   # * matches any body
+     headers:
+       content-type: application/json

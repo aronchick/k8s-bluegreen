@@ -4,7 +4,6 @@ require 'celluloid'
 require 'celluloid/autostart'
 require 'celluloid/io'
 require 'http'
-require 'nokogiri'
 require 'json'
 require './icons'
 require 'byebug'
@@ -52,17 +51,10 @@ class HttpFetcher
   def scan(type, url, postProcessMethod, publishMethod, options = {} )
     # puts "Request -> http://#{url}"
     begin
-      options = options.merge({ socket_class: Celluloid::IO::TCPSocket,
-                                timeout_class: HTTP::Timeout::Null,
-                                timeout_options: {
-                                  connect_timeout: 5,
-                                  read_timeout: 5,
-                                  write_timeout: 5
-                                  }
-                              })
       response = HTTP.get("http://" + url)
       send(postProcessMethod, {:type => type, :data => response}, publishMethod)
     rescue HTTP::TimeoutError,Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Timeout::Error, Timeout::ExitException => e
+      puts "Rescuing => #{e}"
       send(postProcessMethod, {:type => type, :data => nil}, publishMethod)
     rescue Exception => e
       puts e
@@ -85,18 +77,14 @@ class HttpFetcher
     end
   end
 
-  def processTimeAndDateResponse (response, publishMethod)
+  def processMockResponse (response, publishMethod)
+    # puts "Processing Mock => #{response}"
     return if response.nil? or response[:data].nil?
-    doc = Nokogiri.parse(response[:data].body.to_s)
-    this_host = nil
-    begin
-      this_host = doc.css('#ct').inner_html.split(':')[2][0..1]
-    rescue NoMethodError => e
-      puts e
-    end
+    data = JSON.parse(response[:data])
+    return if data.nil?
     publishMethod.call({
                           :type => "update",
-                          :server_hostname => this_host,
+                          :server_hostname => rand(25),
                           :server_color => "##{Constants.genHex}#{Constants.genHex}#{Constants.genHex}",
                           :server_icon => AllIcons.getRand,
                           :server_ip => "127.0.0.1"
@@ -122,17 +110,17 @@ class GrabServer
   include Celluloid::Notifications
 
   def scan
-    url = Constants.isLocal? ?
-            "www.timeanddate.com/worldclock/usa/seattle" :
-            !ENV["CLIENTS_PORT_80_TCP_ADDR"].nil? ?
-              ENV["CLIENTS_PORT_80_TCP_ADDR"] + "/json" :
-              "client/json"
+
+    url = '127.0.0.1:3100/json'
+    url ||= ENV["CLIENTS_PORT_80_TCP_ADDR"]
+    url = "client/json" if File.exist?("/etc/container_environment/KUBE_DNS_PORT_53_UDP_ADDR")
 
     postProcessMethod = Constants.isLocal? ?
-                            :processTimeAndDateResponse :
+                            :processMockResponse :
                             :processContainerResponse
-
-    HttpFetcher.getPool.async.scan(:update, url, postProcessMethod, method(:publishMethod))
+    for i in 1..2 do
+      HttpFetcher.getPool.async.scan(:update, url, postProcessMethod, method(:publishMethod))
+    end
   end
 
   def publishMethod(update_message)
@@ -171,7 +159,6 @@ class DashboardApp < Sinatra::Application
   set :dump_errors, true
   set :root, File.dirname(__FILE__)
   set :threaded, false
-  set :socket, nil
 
   def initialize
     super()
@@ -180,21 +167,25 @@ class DashboardApp < Sinatra::Application
     subscribe 'sweep_server', :sweep_server
     Celluloid::Actor[:grab_server] = GrabServer.new
     Celluloid::Actor[:sweep_server] = SweepServer.new
-    @servers = Set.new
+    @updates_to_push = []
+    @socket = nil
   end
 
   def update_server(topic,data)
-    # info "#{topic}: #{data}"
-    if(settings.socket) then
-      settings.socket.send(data.to_json)
-      @servers.add(data[:server_ip]) if data[:server_ip]
-    end
+    # puts "Received Data => #{data}"
+    @updates_to_push.push(data)
+    # puts "Updates: " + @updates_to_push.to_json
   end
 
   def sweep_server(topic,data)
-    # info "#{topic}: #{data}"
-    if(settings.socket) then
-      settings.socket.send(data.to_json)
+    @updates_to_push.push(data)
+  end
+
+  def push_data
+    # byebug if (@updates_to_push.length > 10)
+    if(@socket) then
+      @socket.send(@updates_to_push.to_json)
+      @updates_to_push.clear
     end
   end
 
@@ -214,23 +205,23 @@ class DashboardApp < Sinatra::Application
     else
       request.websocket do |ws|
         ws.onopen do
-          settings.socket = ws
+          @socket = ws
           puts "Connected to #{request.path}."
           ws.send "Connected to server at #{request.path}."
           every(0.1) { Celluloid::Actor[:grab_server].scan }
+          every(1) { push_data }
         end
         ws.onmessage do |msg|
           # puts "Received Message: #{msg}"
-          # puts "Sending #{msg}"
-          # byebug
-          @servers = msg.split(/,/)
-          puts "sweeping #{@servers.length} servers"
-          Celluloid::Actor[:sweep_server].sweep(@servers)
-          # settings.socket.send "Server replies: #{msg}"
+          servers = Set.new
+          msg.split(/,/).each { | server_ip | servers.add(server_ip) }
+          # puts "sweeping #{servers.length} servers"
+          Celluloid::Actor[:sweep_server].sweep(servers)
+          # @socket.send "Server replies: #{msg}"
         end
         ws.onclose do
           warn("websocket closed")
-          settings.socket = nil
+          @socket = nil
           puts "Client closed"
           ws.send "Closed."
         end

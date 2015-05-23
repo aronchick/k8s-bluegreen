@@ -1,45 +1,47 @@
-# From: https://rossfairbanks.com/2015/03/06/rails-app-on-docker-using-passenger-image.html
+FROM ubuntu
 
-FROM phusion/passenger-ruby21:0.9.15
+RUN apt-get -y install software-properties-common && \
+    apt-add-repository ppa:brightbox/ruby-ng
+RUN apt-get -y update
+RUN apt-get -y install build-essential \
+                       ruby2.2 ruby2.2-dev \
+                       ruby-switch
 
-# Set correct environment variables.
-ENV HOME /root
+# Disable the below line if you don't want debugging tools
+RUN apt-get -y install dnsutils curl
 
-# Use baseimage-docker's init system.
-CMD ["/sbin/my_init"]
-
-# Expose Nginx HTTP service
-EXPOSE 80
-
-# Remove the default site
-RUN rm /etc/nginx/sites-enabled/default
-
-# Install bundle of gems
-WORKDIR /tmp
-ADD clientapp/Gemfile /tmp/
-ADD clientapp/Gemfile.lock /tmp/
-RUN bundle install
-
-# Add the Rails app
-ADD clientapp /home/app/clientapp
-RUN chown -R app:app /home/app/clientapp
-
-# Add the nginx site and config
-ADD nginx.conf /etc/nginx/sites-enabled/clientapp.conf
+RUN ruby-switch --set ruby2.2
+RUN gem update --system
+RUN gem install bundler
 
 # Install Thin and add defaults
 RUN gem install thin
 RUN thin install
 RUN /usr/sbin/update-rc.d -f thin defaults
-COPY thin.conf /etc/thin/clientapp
-COPY 60_start_thin.sh /etc/my_init.d/60_start_thin.sh
-RUN chmod ugo+x /etc/my_init.d/60_start_thin.sh
 
-# Start Nginx / Passenger
-RUN rm -f /etc/service/nginx/down
+# Expose HTTP service
+EXPOSE 80
+
+# Add app user
+RUN adduser --disabled-password --home /app app
+
+# Install bundle of gems
+WORKDIR /tmp
+ADD app/Gemfile /tmp/
+ADD app/Gemfile.lock /tmp/
+ENV RAILS_ENV production
+RUN bundle install
+
+WORKDIR /app
+
+# Add the Rails app
+ADD app /app
+RUN chown -R app:app /app
+RUN rm -rf /app/log
+COPY thin.conf /etc/thin/app
 
 # Clean up APT and bundler when done.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Finally, change to the right directory
-WORKDIR /home/app/clientapp
+# Start Thin
+CMD ["thin", "-R", "config.ru", "-C", "/etc/thin/app", "start"]
