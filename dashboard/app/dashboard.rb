@@ -65,7 +65,7 @@ class HttpFetcher
     s = nil
     begin
         Timeout::timeout(1) do
-          s = TCPSocket.new(server_ip, 80)
+          s = TCPSocket.new(server_ip, 3000)
         end
     rescue
       publishMethod.call({
@@ -113,7 +113,7 @@ class GrabServer
 
     url = '127.0.0.1:3100/json'
     url = "#{ENV['CLIENT_PORT_3000_TCP_ADDR']}:#{ENV['CLIENT_PORT_3000_TCP_PORT']}/json" unless ENV['CLIENT_PORT_3000_TCP_ADDR'].nil?
-    url = "client/json" if File.exist?("/etc/container_environment/KUBE_DNS_PORT_53_UDP_ADDR")
+    url = "client/json" unless ENV['KUBERNETES_RO_PORT'].nil?
 
     postProcessMethod = Constants.isLocal? ?
                             :processMockResponse :
@@ -184,8 +184,10 @@ class DashboardApp < Sinatra::Application
   def push_data
     # byebug if (@updates_to_push.length > 10)
     if(@socket) then
-      @socket.send(@updates_to_push.to_json)
-      @updates_to_push.clear
+      if (@updates_to_push.length > 0) then
+        @socket.send(@updates_to_push.to_json)
+        @updates_to_push.clear
+      end
     end
   end
 
@@ -206,10 +208,10 @@ class DashboardApp < Sinatra::Application
       request.websocket do |ws|
         ws.onopen do
           @socket = ws
-          puts "Connected to #{request.path}."
-          ws.send "Connected to server at #{request.path}."
+          # puts "Connected to #{request.path}."
+          # ws.send "Connected to server at #{request.path}."
           every(0.1) { Celluloid::Actor[:grab_server].scan }
-          every(1) { push_data }
+          every(0.2) { push_data }
         end
         ws.onmessage do |msg|
           # puts "Received Message: #{msg}"

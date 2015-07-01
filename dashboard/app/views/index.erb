@@ -34,13 +34,13 @@
       ws.onmessage = function(evt)
       {
         data = null
+        console.log(evt);
         try {
                 data = JSON.parse(evt.data);
             }
             catch (e) {
                 console.log("evt.data is not valid JSON:\nevt: " + evt);
             };
-        console.log(data);
         if (data != null) {
           $.each(data, function (index, item) {
             if (item.type == "update") {
@@ -64,7 +64,7 @@
                   .css("border-color", item.server_color )
                   .css("color", "#FFFFFF")
                   .fadeTo(0, 0.50)
-                  .fadeTo(500, 1)
+                  .fadeTo(200, 1)
                   .addClass('alive-node');
                   $("#node-" + item.server_hostname + "-icon").removeClass().toggleClass("glyphicon " + item.server_icon);
               }
@@ -93,8 +93,15 @@
         var alive_node_ips = [];
         $(".alive-node").each(function() { alive_node_ips.push(this.attributes['data-ip'].value)});
 
-        if (ws.OPEN) { ws.send(alive_node_ips); }
+        if ((ws.readyState == 1) && (ws.OPEN)) { ws.send(alive_node_ips); }
       },1000);
+
+      setInterval(function(){
+        if (ws.readyState >= 2) {
+          ws.close();
+          ws = new WebSocket("<%= Constants.WS_Code %>");
+        }
+      }, 4000);
 
     });
 

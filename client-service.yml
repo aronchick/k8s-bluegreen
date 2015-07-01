@@ -2,7 +2,7 @@ apiVersion: v1beta3
 kind: Service
 metadata:
   labels:
-    name: client
+    name: client-service
   name: client
 spec:
   ports:

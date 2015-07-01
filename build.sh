@@ -15,9 +15,12 @@ NAME="$1"
 LABEL="$2"
 IMAGENAME=$LABEL"_image"
 VERSION="$3"
+PROJECT="linear-pointer-95422"
 
+cp ../utility_files/* .
 docker build -t "$IMAGENAME" .
-docker tag -f $IMAGENAME:latest gcr.io/mythical-willow-91020/$IMAGENAME:$VERSION
-gcloud preview docker push gcr.io/mythical-willow-91020/$IMAGENAME:$VERSION
+docker tag -f $IMAGENAME:latest gcr.io/$PROJECT/$IMAGENAME:$VERSION
+gcloud preview docker push gcr.io/$PROJECT/$IMAGENAME:$VERSION
 sed -e "s/RCNAME/$NAME/g; s/VERSION/$VERSION/g; s/IMAGENAME/$IMAGENAME/g; s/LABEL/$LABEL/g" ../rc-template.yml > ../$NAME-rc.yml
+~/Code/kubernetes/cluster/kubectl.sh stop rc,po -l name=$LABEL
 cat ../$NAME-rc.yml | ~/Code/kubernetes/cluster/kubectl.sh create -f -

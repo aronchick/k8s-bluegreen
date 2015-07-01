@@ -6,23 +6,23 @@ spec:
   replicas: 2
   selector:
     name: client
-    version: v3.0.0
+    version: v2.0.0
   template:
     metadata:
       labels:
         name: client
-        version: v3.0.0
+        version: v2.0.0
     spec:
       containers:
-      - image: gcr.io/mythical-willow-91020/client_image:v3.0.0
+      - image: gcr.io/linear-pointer-95422/client_image:v2.0.0
         name: client
         livenessProbe:
         # an http probe
         httpGet:
           path: /_status/healthz
-          port: 80
+          port: 3000
           initialDelaySeconds: 30
           timeoutSeconds: 1
         ports:
-        - containerPort: 80
+        - containerPort: 3000
           protocol: TCP

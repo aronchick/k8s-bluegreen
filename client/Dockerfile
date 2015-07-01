@@ -38,7 +38,7 @@ WORKDIR /app
 # Add the Rails app
 ADD app /app
 RUN chown -R app:app /app
-RUN rm -rf /app/log
+RUN rm -rf /app/log/*
 
 # Clean up APT and bundler when done.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
