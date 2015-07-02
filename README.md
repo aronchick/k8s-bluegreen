@@ -1,5 +1,5 @@
 # Demo Script
-Tested on Mac OS X, though there's nothing preventing it from working elsewher.
+Tested on Mac OS X, though there's nothing preventing it from working elsewhere.
 
 Demo Pre-setup (just to make it fast):
 - From the directory in which you have cloned the repo:
