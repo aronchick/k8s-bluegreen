@@ -21,8 +21,8 @@ spec:
           httpGet:
             path: /_status/healthz
             port: 3000
-            initialDelaySeconds: 30
-            timeoutSeconds: 1
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
         ports:
         - containerPort: 3000
           protocol: TCP
