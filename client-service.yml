@@ -10,4 +10,4 @@ spec:
       targetPort: 3000
   selector:
     name: client
-  createExternalLoadBalancer: true
+  type: LoadBalancer
