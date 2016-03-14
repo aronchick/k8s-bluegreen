@@ -1,13 +1,13 @@
-apiVersion: v1beta3
+apiVersion: v1
 kind: Service
 metadata:
   labels:
     name: client-service
-  name: client
+  name: client-service
 spec:
   ports:
     - port: 80
       targetPort: 3000
   selector:
-    name: client
-  createExternalLoadBalancer: true
+    name: client-template-label
+  type: LoadBalancer

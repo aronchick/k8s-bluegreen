@@ -113,7 +113,7 @@ class GrabServer
 
     url = '127.0.0.1:3100/json'
     url = "#{ENV['CLIENT_PORT_3000_TCP_ADDR']}:#{ENV['CLIENT_PORT_3000_TCP_PORT']}/json" unless ENV['CLIENT_PORT_3000_TCP_ADDR'].nil?
-    url = "client/json" unless ENV['KUBERNETES_RO_PORT'].nil?
+    url = "client-service/json" unless ENV['KUBERNETES_SERVICE_HOST'].nil?
 
     postProcessMethod = Constants.isLocal? ?
                             :processMockResponse :

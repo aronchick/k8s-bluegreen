@@ -1,28 +1,26 @@
-apiVersion: v1beta3
+apiVersion: v1
 kind: ReplicationController
 metadata:
   name: client-purple
 spec:
   replicas: 2
   selector:
-    name: client
+    name: client-template-label # must match template label
     version: v2.0.0
   template:
     metadata:
       labels:
-        name: client
+        name: client-template-label  # must match template label
         version: v2.0.0
     spec:
       containers:
       - image: gcr.io/linear-pointer-95422/client_image:v2.0.0
-        name: client
+        name: client-container-name
         livenessProbe:
-        # an http probe
-        httpGet:
-          path: /_status/healthz
-          port: 3000
-          initialDelaySeconds: 30
-          timeoutSeconds: 1
+          # an http probe
+          httpGet:
+            path: /_status/healthz
+            port: 3000
         ports:
         - containerPort: 3000
           protocol: TCP
