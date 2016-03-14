@@ -17,10 +17,12 @@ spec:
       - image: gcr.io/linear-pointer-95422/client_image:v2.0.0
         name: client-container-name
         livenessProbe:
-          # an http probe
+        # an http probe
           httpGet:
             path: /_status/healthz
             port: 3000
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
         ports:
         - containerPort: 3000
           protocol: TCP
