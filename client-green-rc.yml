@@ -1,26 +1,25 @@
-apiVersion: v1
-kind: ReplicationController
+apiVersion: extensions/v1beta1
+kind: Deployment
 metadata:
-  name: client-green
+  name: client-canary-deployment
 spec:
   replicas: 2
-  selector:
-    name: client
-    version: v3.0.0
   template:
     metadata:
       labels:
-        name: client
-        version: v3.0.0
+        app: client
+        track: canary
     spec:
       containers:
       - image: gcr.io/linear-pointer-95422/client_image:v3.0.0
-        name: client
+        name: client-container-name
         livenessProbe:
         # an http probe
           httpGet:
             path: /_status/healthz
             port: 3000
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
         ports:
         - containerPort: 3000
           protocol: TCP

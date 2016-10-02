@@ -9,5 +9,6 @@ spec:
     - port: 80
       targetPort: 3000
   selector:
-    name: client-template-label
+    app: client
+    # track: canary
   type: LoadBalancer

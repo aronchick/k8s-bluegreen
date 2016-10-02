@@ -1,20 +1,17 @@
-apiVersion: v1
-kind: ReplicationController
+apiVersion: extensions/v1beta1
+kind: Deployment
 metadata:
-  name: client-purple
+  name: client-deployment
 spec:
   replicas: 2
-  selector:
-    name: client-template-label # must match template label
-    version: v2.0.0
   template:
     metadata:
       labels:
-        name: client-template-label  # must match template label
-        version: v2.0.0
+        app: client
+        track: stable
     spec:
       containers:
-      - image: gcr.io/linear-pointer-95422/client_image:v2.0.0
+      - image: gcr.io/k8s-sample-project/client_image:v2.0.0
         name: client-container-name
         livenessProbe:
         # an http probe
